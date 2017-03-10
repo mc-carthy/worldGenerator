@@ -86,11 +86,23 @@ public class Generator : MonoBehaviour {
         {
             for (int y = 0; y < height; y++)
             {
-                // Get samples at smaller intervals
-                float x1 = x / (float) width;
-                float y1 = y / (float) height;
+                // Noise range
+                float x1 = 0, x2 = 1;
+                float y1 = 0, y2 = 1;
 
-                float value = (float) heightMap.Get (x1, y1);
+                float dx = x2 - x1;
+                float dy = y2 - y1;
+
+                // Get samples at smaller intervals
+                float s = x / (float) width;
+                float t = y / (float) height;
+
+                // Calculate 3D coords
+                float nx = x1 + Mathf.Cos (s * 2 * Mathf.PI) * dx / (2 * Mathf.PI);
+                float ny = y1 + Mathf.Sin (s * 2 * Mathf.PI) * dx / (2 * Mathf.PI);
+                float nz = t;
+
+                float value = (float) heightMap.Get (nx, ny, nz);
 
                 // Keep track of the min/max values
                 mapData.max = (value > mapData.max) ? value : mapData.max;
