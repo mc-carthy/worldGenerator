@@ -17,10 +17,35 @@ public class Tile {
     public int x, y;
 
     public Tile right, top, left, bottom;
+    public int bitmask;
 
     public Tile ()
     {
 
+    }
+
+    public void UpdateBitmask ()
+    {
+        int count = 0;
+
+        if (top.heightType == heightType)
+        {
+            count += 1;
+        }
+        if (right.heightType == heightType)
+        {
+            count += 2;
+        }
+        if (bottom.heightType == heightType)
+        {
+            count += 4;
+        }
+        if (left.heightType == heightType)
+        {
+            count += 8;
+        }
+
+        bitmask = count;
     }
 
 }

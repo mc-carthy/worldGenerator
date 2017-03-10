@@ -45,7 +45,14 @@ public static class TextureGenerator {
 				case HeightType.Snow:
 					pixels[x + y * width] = SnowColor;
 					break;
-				}            }
+				}
+
+                // Darken edges
+                if (tiles[x,y].bitmask != 15)
+                {
+					pixels [x + y * width] = Color.Lerp (pixels[x + y * width], Color.black, 0.4f);
+                }
+            }
         }
 
         texture.SetPixels (pixels);

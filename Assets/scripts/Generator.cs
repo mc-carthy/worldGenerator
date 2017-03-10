@@ -47,6 +47,9 @@ public class Generator : MonoBehaviour {
         GetData (heightMap, ref heightData);
         LoadTiles ();
 
+        UpdateNeighbours ();
+        UpdateBitmasks ();
+
         heightMapRenderer.materials [0].mainTexture = TextureGenerator.GenerateTexture (width, height, tiles);
     }
 
@@ -54,7 +57,9 @@ public class Generator : MonoBehaviour {
     {
         if (Input.GetKeyDown (KeyCode.Space))
         {
-            SceneManager.LoadScene (SceneManager.GetActiveScene ().name, LoadSceneMode.Single);
+            Initialise ();
+            GetData (heightMap, ref heightData);
+            LoadTiles ();
         }
     }
 
@@ -185,6 +190,17 @@ public class Generator : MonoBehaviour {
         }
     }
 
+    private void UpdateBitmasks ()
+    {
+        for (int x = 0; x < width; x++)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                tiles [x, y].UpdateBitmask ();
+            }
+        }
+    }
+
     // Get Tile neighbours
     private Tile GetRight (Tile t)
     {
@@ -192,7 +208,7 @@ public class Generator : MonoBehaviour {
     }
     private Tile GetTop (Tile t)
     {
-        return tiles [t.y, MathHelper.Mod (t.y - 1, height)];
+        return tiles [t.x, MathHelper.Mod (t.y - 1, height)];
     }
     private Tile GetLeft (Tile t)
     {
@@ -200,7 +216,7 @@ public class Generator : MonoBehaviour {
     }
     private Tile GetBottom (Tile t)
     {
-        return tiles [t.y, MathHelper.Mod (t.y + 1, height)];
+        return tiles [t.x, MathHelper.Mod (t.y + 1, height)];
     }
 
 }
