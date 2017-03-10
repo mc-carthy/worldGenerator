@@ -97,12 +97,13 @@ public class Generator : MonoBehaviour {
                 float s = x / (float) width;
                 float t = y / (float) height;
 
-                // Calculate 3D coords
+                // Calculate 4D coords
                 float nx = x1 + Mathf.Cos (s * 2 * Mathf.PI) * dx / (2 * Mathf.PI);
-                float ny = y1 + Mathf.Sin (s * 2 * Mathf.PI) * dx / (2 * Mathf.PI);
-                float nz = t;
+                float ny = y1 + Mathf.Cos (t * 2 * Mathf.PI) * dy / (2 * Mathf.PI);
+                float nz = x1 + Mathf.Sin (s * 2 * Mathf.PI) * dx / (2 * Mathf.PI);
+                float nw = y1 + Mathf.Sin (t * 2 * Mathf.PI) * dy / (2 * Mathf.PI);
 
-                float value = (float) heightMap.Get (nx, ny, nz);
+                float value = (float) heightMap.Get (nx, ny, nz, nw);
 
                 // Keep track of the min/max values
                 mapData.max = (value > mapData.max) ? value : mapData.max;
