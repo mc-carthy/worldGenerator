@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.SceneManagement;
 using AccidentalNoise;
 
 public class Generator : MonoBehaviour {
@@ -19,6 +20,20 @@ public class Generator : MonoBehaviour {
 	[SerializeField]
 	private bool useRandomSeed;
 
+    [HeaderAttribute ("Biome Colours")]
+	[SerializeField]
+	private float DeepWater = 0.2f;
+	[SerializeField]
+	private float ShallowWater = 0.4f;	
+	[SerializeField]
+	private float Sand = 0.5f;
+	[SerializeField]
+	private float Grass = 0.7f;
+	[SerializeField]
+	private float Forest = 0.8f;
+	[SerializeField]
+	private float Rock = 0.9f;
+
 
     private ImplicitFractal heightMap;
     private MapData heightData;
@@ -35,11 +50,19 @@ public class Generator : MonoBehaviour {
         heightMapRenderer.materials [0].mainTexture = TextureGenerator.GenerateTexture (width, height, tiles);
     }
 
+    private void Update ()
+    {
+        if (Input.GetKeyDown (KeyCode.Space))
+        {
+            SceneManager.LoadScene (SceneManager.GetActiveScene ().name, LoadSceneMode.Single);
+        }
+    }
+
     private void Initialise ()
     {
 		if (useRandomSeed)
 		{
-			seed = (int) Time.time;
+			seed = (int) System.DateTime.Now.Ticks;
 		}
 
 		System.Random pseudoRandom = new System.Random (seed.GetHashCode ());
@@ -97,6 +120,36 @@ public class Generator : MonoBehaviour {
                 value = (value - heightData.min) / (heightData.max - heightData.min);
 
                 t.heightValue = value;
+
+				//HeightMap Analyze
+				if (value < DeepWater)
+                {
+					t.heightType = HeightType.DeepWater;
+				}
+				else if (value < ShallowWater)
+                {
+					t.heightType = HeightType.ShallowWater;
+				}
+				else if (value < Sand)
+                {
+					t.heightType = HeightType.Sand;
+				}
+				else if (value < Grass)
+                {
+					t.heightType = HeightType.Grass;
+				}
+				else if (value < Forest)
+                {
+					t.heightType = HeightType.Forest;
+				}
+				else if (value < Rock)
+                {
+					t.heightType = HeightType.Rock;
+				}
+				else
+                {
+					t.heightType = HeightType.Snow;
+				}
 
                 tiles [x, y] = t;
             }
