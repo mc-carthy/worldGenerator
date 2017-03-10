@@ -16,6 +16,8 @@ public class Tile {
 	public float heightValue { get; set; }
     public int x, y;
 
+    public Tile right, top, left, bottom;
+
     public Tile ()
     {
 

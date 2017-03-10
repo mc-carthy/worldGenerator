@@ -169,4 +169,38 @@ public class Generator : MonoBehaviour {
         }
     }
 
+    private void UpdateNeighbours ()
+    {
+        for (int x = 0; x < width; x++)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                Tile t = tiles [x, y];
+
+                t.right = GetRight (t);
+                t.top = GetTop (t);
+                t.left = GetLeft (t);
+                t.bottom = GetBottom (t);
+            }
+        }
+    }
+
+    // Get Tile neighbours
+    private Tile GetRight (Tile t)
+    {
+        return tiles [MathHelper.Mod (t.x + 1, width), t.y];
+    }
+    private Tile GetTop (Tile t)
+    {
+        return tiles [t.y, MathHelper.Mod (t.y - 1, height)];
+    }
+    private Tile GetLeft (Tile t)
+    {
+        return tiles [MathHelper.Mod (t.x - 1, width), t.y];
+    }
+    private Tile GetBottom (Tile t)
+    {
+        return tiles [t.y, MathHelper.Mod (t.y + 1, height)];
+    }
+
 }
