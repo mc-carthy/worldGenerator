@@ -1,5 +1,5 @@
 ﻿using UnityEngine;
-using UnityEngine.SceneManagement;
+using System.Collections.Generic;
 using AccidentalNoise;
 
 public class Generator : MonoBehaviour {
@@ -40,6 +40,9 @@ public class Generator : MonoBehaviour {
     private Tile [,] tiles;
     private MeshRenderer heightMapRenderer;
 
+    private List<TileGroup> waters = new List<TileGroup> ();
+    private List<TileGroup> lands = new List<TileGroup> ();
+
     private void Start ()
     {
         heightMapRenderer = transform.Find ("heightTexture").GetComponent<MeshRenderer> ();
@@ -49,6 +52,7 @@ public class Generator : MonoBehaviour {
 
         UpdateNeighbours ();
         UpdateBitmasks ();
+        FloodFill ();
 
         heightMapRenderer.materials [0].mainTexture = TextureGenerator.GenerateTexture (width, height, tiles);
     }
@@ -143,30 +147,37 @@ public class Generator : MonoBehaviour {
 				if (value < DeepWater)
                 {
 					t.heightType = HeightType.DeepWater;
+                    t.isCollidable = false;
 				}
 				else if (value < ShallowWater)
                 {
 					t.heightType = HeightType.ShallowWater;
+                    t.isCollidable = false;
 				}
 				else if (value < Sand)
                 {
 					t.heightType = HeightType.Sand;
+                    t.isCollidable = true;
 				}
 				else if (value < Grass)
                 {
 					t.heightType = HeightType.Grass;
+                    t.isCollidable = true;
 				}
 				else if (value < Forest)
                 {
 					t.heightType = HeightType.Forest;
+                    t.isCollidable = true;
 				}
 				else if (value < Rock)
                 {
 					t.heightType = HeightType.Rock;
+                    t.isCollidable = true;
 				}
 				else
                 {
 					t.heightType = HeightType.Snow;
+                    t.isCollidable = true;
 				}
 
                 tiles [x, y] = t;
@@ -198,6 +209,103 @@ public class Generator : MonoBehaviour {
             {
                 tiles [x, y].UpdateBitmask ();
             }
+        }
+    }
+
+    private void FloodFill ()
+    {
+        Stack<Tile> stack = new Stack<Tile> ();
+
+        for (int x = 0; x < width; x++)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                Tile t = tiles [x, y];
+
+                // If the tile has already been flood filled, skip
+                if (t.isFloodFilled)
+                {
+                    continue;
+                }
+
+                // Land check
+                if (t.isCollidable)
+                {
+                    TileGroup group = new TileGroup ();
+                    group.type = TileGroupType.Land;
+                    stack.Push (t);
+
+                    while (stack.Count > 0)
+                    {
+                        FloodFill (stack.Pop (), ref group, ref stack);
+                    }
+
+                    if (group.tiles.Count > 0)
+                    {
+                        lands.Add (group);
+                    }
+                }
+                // Water check
+                else
+                {
+                    TileGroup group = new TileGroup ();
+                    group.type = TileGroupType.Water;
+                    stack.Push (t);
+
+                    while (stack.Count > 0)
+                    {
+                        FloodFill (stack.Pop (), ref group, ref stack);
+                    }
+
+                    if (group.tiles.Count > 0)
+                    {
+                        waters.Add (group);
+                    }
+                }
+            }
+        }
+    }
+
+    private void FloodFill (Tile tile, ref TileGroup tiles, ref Stack<Tile> stack)
+    {
+        // Validation
+        if (tile.isFloodFilled)
+        {
+            return;
+        }
+        if (tiles.type == TileGroupType.Land && !tile.isCollidable)
+        {
+            return;
+        }
+        if (tiles.type == TileGroupType.Water && tile.isCollidable)
+        {
+            return;
+        }
+
+        // Add to TileGroup
+        tiles.tiles.Add (tile);
+        tile.isFloodFilled = true;
+
+        // Flood into neighbours (orthographic)
+        Tile t = GetRight (tile);
+        if (!t.isFloodFilled && tile.isCollidable == t.isCollidable)
+        {
+            stack.Push (t);
+        }
+        t = GetTop (tile);
+        if (!t.isFloodFilled && tile.isCollidable == t.isCollidable)
+        {
+            stack.Push (t);
+        }
+        t = GetLeft (tile);
+        if (!t.isFloodFilled && tile.isCollidable == t.isCollidable)
+        {
+            stack.Push (t);
+        }
+        t = GetBottom (tile);
+        if (!t.isFloodFilled && tile.isCollidable == t.isCollidable)
+        {
+            stack.Push (t);
         }
     }
 

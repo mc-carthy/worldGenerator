@@ -20,7 +20,7 @@ public static class TextureGenerator {
         {
             for (int y = 0; y < height; y++)
             {
-                float value = tiles [x, y].heightValue;
+                // float value = tiles [x, y].heightValue;
                 // pixels [x + y * width] = Color.Lerp (Color.black, Color.white, value);
 				switch (tiles [x, y].heightType)
 				{
@@ -52,6 +52,8 @@ public static class TextureGenerator {
                 {
 					pixels [x + y * width] = Color.Lerp (pixels[x + y * width], Color.black, 0.4f);
                 }
+
+                // pixels [x + y * width] = (tiles [x, y].isCollidable) ? Color.green : Color.blue;
             }
         }
 

@@ -19,6 +19,9 @@ public class Tile {
     public Tile right, top, left, bottom;
     public int bitmask;
 
+    public bool isCollidable;
+    public bool isFloodFilled;
+
     public Tile ()
     {
 
