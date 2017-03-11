@@ -114,7 +114,7 @@ public class Generator : MonoBehaviour {
         UpdateNeighbours ();
 
         GenerateRivers ();
-        
+
         UpdateBitmasks ();
         FloodFill ();
 
@@ -581,6 +581,66 @@ public class Generator : MonoBehaviour {
             }
         }
         
+    }
+
+    
+    private void BuildRiverGroups ()
+    {
+        // Check each tile to see if owned by multiple rivers
+        for (int x = 0; x < width; x++)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                Tile t = tiles [x, y];
+
+                if (t.rivers.Count > 1)
+                {
+                    RiverGroup group = null;
+
+                    // Check if a river group already exists for this group
+                    for (int n = 0; n < t.rivers.Count; n++)
+                    {
+                        River tileRiver = t.rivers [n];
+
+                        for (int i = 0; i < riverGroups.Count; i++)
+                        {
+                            for (int j = 0; j < riverGroups [i].rivers.Count; j++)
+                            {
+                                River river = riverGroups [i].rivers [j];
+                                if (river.ID == tileRiver.ID)
+                                {
+                                    group = riverGroups [i];
+                                }
+                                if (group != null) break;
+                            }
+                            if (group != null) break;
+                        }
+                        if (group != null) break;
+                    }
+                    // Existing group found, add to it
+                    if (group != null)
+                    {
+                        for (int n = 0; n < t.rivers.Count; n++)
+                        {
+                            if (!group.rivers.Contains (t.rivers [n]))
+                            {
+                                group.rivers.Add (t.rivers [n]);
+                            }
+                        }
+                    }
+                    // No existing group found, create a new one
+                    else
+                    {
+                        group = new RiverGroup ();
+                        for (int n = 0; n < t.rivers.Count; n++)
+                        {
+                            group.rivers.Add (t.rivers [n]);
+                        }
+                        riverGroups.Add (group);
+                    }
+                }
+            }
+        }
     }
 
     private void UpdateNeighbours ()
