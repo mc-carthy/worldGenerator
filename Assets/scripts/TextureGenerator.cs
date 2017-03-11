@@ -19,6 +19,14 @@ public static class TextureGenerator {
     private static Color WarmerColour = new Color (1f, 100f / 255f, 0f, 1f);
     private static Color WarmestColour = new Color (241f / 255f, 12f / 255f, 0f, 1f);
 
+    //Moisture map
+    private static Color DriestColour = new Color (255f / 255f, 139f / 255f, 17f / 255f, 1f);
+    private static Color DrierColour = new Color (245f / 255f, 245f / 255f, 23f / 255f, 1f);
+    private static Color DryColour = new Color (80f / 255f, 255f / 255f, 0f / 255f, 1f);
+    private static Color WetColour = new Color (85f / 255f, 255f / 255f, 255f / 255f, 1f);
+    private static Color WetterColour = new Color (20f / 255f, 70f / 255f, 255f / 255f, 1f);
+    private static Color WettestColour = new Color(0f / 255f, 0f / 255f, 100f / 255f, 1f);
+
 	public static Texture2D GenerateHeightMapTexture (int width, int height, Tile [,] tiles)
     {
         Texture2D texture = new Texture2D (width, height);
@@ -109,6 +117,51 @@ public static class TextureGenerator {
                 if (tiles[x,y].bitmask != 15)
                 {
 					pixels [x + y * width] = Color.Lerp (pixels[x + y * width], Color.black, 0.4f);
+                }
+            }
+        }
+
+        texture.SetPixels (pixels);
+        texture.wrapMode = TextureWrapMode.Clamp;
+        texture.Apply ();
+
+        return texture;
+    }
+
+    public static Texture2D GenerateMoistureMapTexture (int width, int height, Tile [,] tiles)
+    {
+        Texture2D texture = new Texture2D (width, height);
+        Color [] pixels = new Color [width * height];
+
+        for (int x = 0; x < width; x++)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                Tile t = tiles [x, y];
+                
+                if (t.moistureType == MoistureType.Driest)
+                {
+                    pixels [x + width * y] = DriestColour;
+                }
+                else if (t.moistureType == MoistureType.Drier)
+                {
+                    pixels [x + width * y] = DrierColour;
+                }
+                else if (t.moistureType == MoistureType.Dry)
+                {
+                    pixels [x + width * y] = DryColour;
+                }
+                else if (t.moistureType == MoistureType.Wet)
+                {
+                    pixels [x + width * y] = WetColour;
+                }
+                else if (t.moistureType == MoistureType.Wetter)
+                {
+                    pixels [x + width * y] = WetterColour;
+                }
+                else
+                {
+                    pixels [x + width * y] = WettestColour;
                 }
             }
         }

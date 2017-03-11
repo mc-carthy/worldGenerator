@@ -19,14 +19,26 @@ public enum HeatType {
     Warmest = 5
 }
 
+public enum MoistureType {
+    Wettest,
+    Wetter,
+    Wet,
+    Dry,
+    Drier,
+    Driest
+}
+
 public class Tile {
 
 	public HeightType heightType;
 	public float heightValue { get; set; }
 
     public HeatType heatType;
-    public float heatValue { get; set; 
-    }
+    public float heatValue { get; set; }
+
+    public MoistureType moistureType;
+    public float moistureValue { get; set; }
+    
     public int x, y;
 
     public Tile right, top, left, bottom;

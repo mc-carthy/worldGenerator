@@ -22,17 +22,17 @@ public class Generator : MonoBehaviour {
 
     [HeaderAttribute ("Height Map")]
 	[SerializeField]
-	private float DeepWater = 0.2f;
+	private float deepWater = 0.2f;
 	[SerializeField]
-	private float ShallowWater = 0.4f;	
+	private float shallowWater = 0.4f;	
 	[SerializeField]
-	private float Sand = 0.5f;
+	private float sand = 0.5f;
 	[SerializeField]
-	private float Grass = 0.7f;
+	private float grass = 0.7f;
 	[SerializeField]
-	private float Forest = 0.8f;
+	private float forest = 0.8f;
 	[SerializeField]
-	private float Rock = 0.9f;
+	private float rock = 0.9f;
 
 	[Header("Heat Map")]
 	[SerializeField]
@@ -50,17 +50,36 @@ public class Generator : MonoBehaviour {
 	[SerializeField]
 	float warmerValue = 0.8f;
 
+	[Header("Moisture Map")]
+	[SerializeField]
+	int moistureOctaves = 4;
+	[SerializeField]
+	double moistureFrequency = 3.0;
+	[SerializeField]
+	float drierValue = 0.27f;
+	[SerializeField]
+	float dryValue = 0.4f;
+	[SerializeField]
+	float wetValue = 0.6f;
+	[SerializeField]
+	float wetterValue = 0.8f;
+	[SerializeField]
+	float wettestValue = 0.9f;
+
 
     private ImplicitFractal heightMap;
     private ImplicitCombiner heatMap;
+    private ImplicitFractal moistureMap;
 
     private MapData heightData;
     private MapData heatData;
+    private MapData moistureData;
     
     private Tile [,] tiles;
     
     private MeshRenderer heightMapRenderer;
     private MeshRenderer heatMapRenderer;
+    private MeshRenderer moistureMapRenderer;
 
     private List<TileGroup> waters = new List<TileGroup> ();
     private List<TileGroup> lands = new List<TileGroup> ();
@@ -69,6 +88,7 @@ public class Generator : MonoBehaviour {
     {
         heightMapRenderer = transform.Find ("heightTexture").GetComponent<MeshRenderer> ();
         heatMapRenderer = transform.Find ("heatTexture").GetComponent<MeshRenderer> ();
+        moistureMapRenderer = transform.Find ("moistureTexture").GetComponent<MeshRenderer> ();
 
         Initialise ();
         GetData ();
@@ -80,6 +100,7 @@ public class Generator : MonoBehaviour {
 
         heightMapRenderer.materials [0].mainTexture = TextureGenerator.GenerateHeightMapTexture (width, height, tiles);
         heatMapRenderer.materials [0].mainTexture = TextureGenerator.GenerateHeatMapTexture (width, height, tiles);
+        moistureMapRenderer.materials [0].mainTexture = TextureGenerator.GenerateMoistureMapTexture (width, height, tiles);
     }
 
     private void Update ()
@@ -126,6 +147,16 @@ public class Generator : MonoBehaviour {
         heatMap.AddSource (gradient);
         heatMap.AddSource (heatFractal);
 
+        // Initialise moistureMap
+		moistureMap = new ImplicitFractal (
+            FractalType.MULTI, 
+		    BasisType.SIMPLEX,
+            InterpolationType.QUINTIC, 
+            moistureOctaves, 
+            moistureFrequency, 
+            pseudoRandom.Next (0, int.MaxValue)
+        );
+
 
     }
 
@@ -134,6 +165,7 @@ public class Generator : MonoBehaviour {
     {
         heightData = new MapData (width, height);
         heatData = new MapData (width, height);
+        moistureData = new MapData (width, height);
 
         // Get height data
         for (int x = 0; x < width; x++)
@@ -159,6 +191,7 @@ public class Generator : MonoBehaviour {
 
                 float heightValue = (float) heightMap.Get (nx, ny, nz, nw);
                 float heatValue = (float) heatMap.Get (nx, ny, nz, nw);
+				float moistureValue = (float) moistureMap.Get (nx, ny, nz, nw);
 
                 // Keep track of the min/max values
                 heightData.max = (heightValue > heightData.max) ? heightValue : heightData.max;
@@ -167,13 +200,17 @@ public class Generator : MonoBehaviour {
                 heatData.max = (heatValue > heatData.max) ? heatValue : heatData.max;
                 heatData.min = (heatValue < heatData.min) ? heatValue : heatData.min;
 
+                moistureData.max = (moistureValue > moistureData.max) ? moistureValue : moistureData.max;
+                moistureData.min = (moistureValue < moistureData.min) ? moistureValue : moistureData.min;
+
                 heightData.data [x, y] = heightValue;
                 heatData.data [x, y] = heatValue;
+                moistureData.data [x, y] = moistureValue;
             }
         }
     }
 
-    // Build Tile array based on heightData
+    // Build Tile array based on data maps
     private void LoadTiles ()
     {
         tiles = new Tile [width, height];
@@ -186,40 +223,40 @@ public class Generator : MonoBehaviour {
                 t.x = x;
                 t.y = y;
 
-                float value = heightData.data [x, y];
+                float heightValue = heightData.data [x, y];
 
                 // Normalize value between 0 and 1
-                value = (value - heightData.min) / (heightData.max - heightData.min);
+                heightValue = (heightValue - heightData.min) / (heightData.max - heightData.min);
 
-                t.heightValue = value;
+                t.heightValue = heightValue;
 
 				//HeightMap Analyze
-				if (value < DeepWater)
+				if (heightValue < deepWater)
                 {
 					t.heightType = HeightType.DeepWater;
                     t.isCollidable = false;
 				}
-				else if (value < ShallowWater)
+				else if (heightValue < shallowWater)
                 {
 					t.heightType = HeightType.ShallowWater;
                     t.isCollidable = false;
 				}
-				else if (value < Sand)
+				else if (heightValue < sand)
                 {
 					t.heightType = HeightType.Sand;
                     t.isCollidable = true;
 				}
-				else if (value < Grass)
+				else if (heightValue < grass)
                 {
 					t.heightType = HeightType.Grass;
                     t.isCollidable = true;
 				}
-				else if (value < Forest)
+				else if (heightValue < forest)
                 {
 					t.heightType = HeightType.Forest;
                     t.isCollidable = true;
 				}
-				else if (value < Rock)
+				else if (heightValue < rock)
                 {
 					t.heightType = HeightType.Rock;
                     t.isCollidable = true;
@@ -277,6 +314,36 @@ public class Generator : MonoBehaviour {
                 else
                 {
                     t.heatType = HeatType.Warmest;
+                }
+
+                // Set moisture value
+                float moistureValue = moistureData.data [x, y];
+                moistureValue = (moistureValue - moistureData.min) / (moistureData.max - moistureData.min);
+                t.moistureValue = moistureValue;
+
+                if (moistureValue < drierValue)
+                {
+                    t.moistureType = MoistureType.Driest;
+                }
+                else if (moistureValue < dryValue)
+                {
+                    t.moistureType = MoistureType.Drier;
+                }
+                else if (moistureValue < wetValue)
+                {
+                    t.moistureType = MoistureType.Dry;
+                }
+                else if (moistureValue < wetterValue)
+                {
+                    t.moistureType = MoistureType.Wet;
+                }
+                else if (moistureValue < wettestValue)
+                {
+                    t.moistureType = MoistureType.Wetter;
+                }
+                else
+                {
+                    t.moistureType = MoistureType.Wettest;
                 }
 
                 tiles [x, y] = t;
