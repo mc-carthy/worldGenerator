@@ -235,6 +235,32 @@ public class Generator : MonoBehaviour {
                 heatValue = (heatValue - heatData.min) / (heatData.max - heatData.min);
                 t.heatValue = heatValue;
 
+                // Set heat type
+                if (heatValue < coldestValue)
+                {
+                    t.heatType = HeatType.Coldest;
+                }
+                else if (heatValue < colderValue)
+                {
+                    t.heatType = HeatType.Colder;
+                }
+                else if (heatValue < coldValue)
+                {
+                    t.heatType = HeatType.Cold;
+                }
+                else if (heatValue < warmValue)
+                {
+                    t.heatType = HeatType.Warm;
+                }
+                else if (heatValue < warmerValue)
+                {
+                    t.heatType = HeatType.Warmer;
+                }
+                else
+                {
+                    t.heatType = HeatType.Warmest;
+                }
+
                 tiles [x, y] = t;
             }
         }
