@@ -34,37 +34,51 @@ public class Generator : MonoBehaviour {
 	[SerializeField]
 	private float rock = 0.9f;
 
-	[Header("Heat Map")]
+	[HeaderAttribute ("Heat Map")]
 	[SerializeField]
-	int heatOctaves = 4;
+	private int heatOctaves = 4;
 	[SerializeField]
-	double heatFrequency = 3.0;
+	private double heatFrequency = 3.0;
 	[SerializeField]
-	float coldestValue = 0.05f;
+	private float coldestValue = 0.05f;
 	[SerializeField]
-	float colderValue = 0.18f;
+	private float colderValue = 0.18f;
 	[SerializeField]
-	float coldValue = 0.4f;
+	private float coldValue = 0.4f;
 	[SerializeField]
-	float warmValue = 0.6f;
+	private float warmValue = 0.6f;
 	[SerializeField]
-	float warmerValue = 0.8f;
+	private float warmerValue = 0.8f;
 
-	[Header("Moisture Map")]
+	[HeaderAttribute ("Moisture Map")]
 	[SerializeField]
-	int moistureOctaves = 4;
+	private int moistureOctaves = 4;
 	[SerializeField]
-	double moistureFrequency = 3.0;
+	private double moistureFrequency = 3.0;
 	[SerializeField]
-	float drierValue = 0.27f;
+	private float drierValue = 0.27f;
 	[SerializeField]
-	float dryValue = 0.4f;
+	private float dryValue = 0.4f;
 	[SerializeField]
-	float wetValue = 0.6f;
+	private float wetValue = 0.6f;
 	[SerializeField]
-	float wetterValue = 0.8f;
+	private float wetterValue = 0.8f;
 	[SerializeField]
-	float wettestValue = 0.9f;
+	private float wettestValue = 0.9f;
+
+    [HeaderAttribute ("Rivers")]
+    [SerializeField]
+    private int totalRiverCount = 40;
+	[SerializeField]
+	private float minRiverHeight = 0.6f;
+	[SerializeField]
+	private int maxRiverAttempts = 1000;
+	[SerializeField]
+	private int minRiverTurns = 18;
+	[SerializeField]
+	private int minRiverLength = 20;
+	[SerializeField]
+	private int maxRiverIntersections = 2;
 
 
     private ImplicitFractal heightMap;
@@ -84,6 +98,9 @@ public class Generator : MonoBehaviour {
     private List<TileGroup> waters = new List<TileGroup> ();
     private List<TileGroup> lands = new List<TileGroup> ();
 
+    private List<River> rivers = new List<River> ();
+    private List<RiverGroup> riverGroups = new List<RiverGroup> ();
+
     private void Start ()
     {
         heightMapRenderer = transform.Find ("heightTexture").GetComponent<MeshRenderer> ();
@@ -95,6 +112,9 @@ public class Generator : MonoBehaviour {
         LoadTiles ();
 
         UpdateNeighbours ();
+
+        GenerateRivers ();
+        
         UpdateBitmasks ();
         FloodFill ();
 
@@ -367,6 +387,200 @@ public class Generator : MonoBehaviour {
                 tiles [x, y] = t;
             }
         }
+    }
+
+    private void GenerateRivers ()
+    {
+        int attempts = 0;
+        int riverCount = totalRiverCount;
+        rivers = new List<River> ();
+
+        while (riverCount > 0 && attempts < maxRiverAttempts)
+        {
+            int x = Random.Range (0, width);
+            int y = Random.Range (0, height);
+            Tile tile = tiles [x, y];
+
+            // Validation
+            if (!tile.isCollidable)
+            {
+                continue;
+            }
+            if (tile.rivers.Count > 0)
+            {
+                continue;
+            }
+
+            if (tile.heightValue > minRiverHeight)
+            {
+                River river = new River (riverCount);
+
+                // Figure out initial direction
+                river.CurrentDirection = tile.GetLowestNeighbour ();
+
+                // Recursively find way to water
+                FindPathToWater (tile, river.CurrentDirection, ref river);
+
+                // Validate generated river
+                if (river.turnCount < minRiverTurns || river.tiles.Count < minRiverLength || river.intersections > maxRiverIntersections)
+                {
+                    // Remove this river
+                    for (int i = 0; i < river.tiles.Count; i++)
+                    {
+                        Tile t = river.tiles [i];
+                        t.rivers.Remove (river);
+                    }
+                }
+                else
+                {
+                    // Add river to list
+                    rivers.Add (river);
+                    tile.rivers.Add (river);
+                    riverCount--;
+                }
+            }
+            attempts++;
+        }
+    }
+
+    private void FindPathToWater (Tile tile, Direction direction, ref River river)
+    {
+        if (tile.rivers.Contains (river))
+        {
+            return;
+        }
+
+        if (tile.rivers.Count > 0)
+        {
+            river.intersections++;
+        }
+
+        river.AddTile (tile);
+
+        // Get neighbours
+        Tile right = GetRight (tile);
+        Tile top = GetTop (tile);
+        Tile left = GetLeft (tile);
+        Tile bottom = GetBottom (tile);
+
+        float rightValue = float.MaxValue;
+        float topValue = float.MaxValue;
+        float leftValue = float.MaxValue;
+        float bottomValue = float.MaxValue;
+
+        // Check height value of neighbours
+        if (right.GetRiverNeighbourCount (river) < 2 && !river.tiles.Contains (right))
+        {
+            rightValue = right.heightValue;
+        }
+        if (top.GetRiverNeighbourCount (river) < 2 && !river.tiles.Contains (top))
+        {
+            topValue = top.heightValue;
+        }
+        if (left.GetRiverNeighbourCount (river) < 2 && !river.tiles.Contains (left))
+        {
+            leftValue = left.heightValue;
+        }
+        if (bottom.GetRiverNeighbourCount (river) < 2 && !river.tiles.Contains (bottom))
+        {
+            bottomValue = bottom.heightValue;
+        }
+
+        // If the neighbour tile has a river that is not this one, flow into it
+        if (right.rivers.Count == 0 && !right.isCollidable)
+        {
+            rightValue = 0;
+        }
+        if (top.rivers.Count == 0 && !top.isCollidable)
+        {
+            topValue = 0;
+        }
+        if (left.rivers.Count == 0 && !left.isCollidable)
+        {
+            leftValue = 0;
+        }
+        if (bottom.rivers.Count == 0 && !bottom.isCollidable)
+        {
+            bottomValue = 0;
+        }
+
+        // Override flow direction if the neighbour tile is significantly lower
+        if (direction == Direction.Right && Mathf.Abs (rightValue - leftValue) < 0.1f)
+        {
+            rightValue = int.MaxValue;
+        }
+        if (direction == Direction.Top && Mathf.Abs (topValue - bottomValue) < 0.1f)
+        {
+            topValue = int.MaxValue;
+        }
+        if (direction == Direction.Left && Mathf.Abs (rightValue - leftValue) < 0.1f)
+        {
+            leftValue = int.MaxValue;
+        }
+        if (direction == Direction.Bottom && Mathf.Abs (topValue - bottomValue) < 0.1f)
+        {
+            bottomValue = int.MaxValue;
+        }
+
+        // Find local miniumum
+        float min = Mathf.Min (Mathf.Min (Mathf.Min (rightValue, topValue), leftValue), bottomValue);
+
+        // If no minumum found, break
+        if (min == int.MaxValue)
+        {
+            return;
+        }
+
+        // Move to next neighbour
+        if (min == rightValue)
+        {
+            if (right.isCollidable)
+            {
+                if (river.CurrentDirection != Direction.Right)
+                {
+                    river.turnCount++;
+                    river.CurrentDirection = Direction.Right;
+                }
+                FindPathToWater (right, direction, ref river);
+            }
+        }
+        else if (min == topValue)
+        {
+            if (top.isCollidable)
+            {
+                if (river.CurrentDirection != Direction.Top)
+                {
+                    river.turnCount++;
+                    river.CurrentDirection = Direction.Top;
+                }
+                FindPathToWater (top, direction, ref river);
+            }
+        }
+        else if (min == leftValue)
+        {
+            if (left.isCollidable)
+            {
+                if (river.CurrentDirection != Direction.Left)
+                {
+                    river.turnCount++;
+                    river.CurrentDirection = Direction.Left;
+                }
+                FindPathToWater (left, direction, ref river);
+            }
+        }
+        else if (min == bottomValue)
+        {
+            if (bottom.isCollidable)
+            {
+                if (river.CurrentDirection != Direction.Bottom)
+                {
+                    river.turnCount++;
+                    river.CurrentDirection = Direction.Bottom;
+                }
+                FindPathToWater (bottom, direction, ref river);
+            }
+        }
+        
     }
 
     private void UpdateNeighbours ()

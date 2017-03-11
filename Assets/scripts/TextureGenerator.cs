@@ -163,6 +163,11 @@ public static class TextureGenerator {
                 {
                     pixels [x + width * y] = WettestColour;
                 }
+
+                if (t.rivers.Count > 0)
+                {
+                    pixels [x + width * y] = Color.red;
+                }
             }
         }
 

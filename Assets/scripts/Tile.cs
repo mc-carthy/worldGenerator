@@ -1,4 +1,7 @@
-﻿public enum HeightType
+﻿using UnityEngine;
+using System.Collections.Generic;
+
+public enum HeightType
 {
     DeepWater = 1,
     ShallowWater = 2,
@@ -47,6 +50,12 @@ public class Tile {
     public bool isCollidable;
     public bool isFloodFilled;
 
+    public Color colour = Color.black;
+
+    public List<River> rivers = new List<River> ();
+
+    public int riverSize { get; set; }
+
     public Tile ()
     {
 
@@ -74,6 +83,83 @@ public class Tile {
         }
 
         bitmask = count;
+    }
+
+    public Direction GetLowestNeighbour ()
+    {
+        if (
+            right.heightValue < top.heightValue &&
+            right.heightValue < left.heightValue &&
+            right.heightValue < bottom.heightValue
+        )
+        {
+            return Direction.Right;
+        }
+        else if (
+            top.heightValue < right.heightValue &&
+            top.heightValue < left.heightValue &&
+            top.heightValue < bottom.heightValue
+        )
+        {
+            return Direction.Top;
+        }
+        else if (
+            left.heightValue < right.heightValue &&
+            left.heightValue < top.heightValue &&
+            left.heightValue < bottom.heightValue
+        )
+        {
+            return Direction.Left;
+        }
+        else if (
+            bottom.heightValue < right.heightValue &&
+            bottom.heightValue < top.heightValue &&
+            bottom.heightValue < left.heightValue
+        )
+        {
+            return Direction.Bottom;
+        }
+        else
+        {
+            return Direction.Bottom;
+        }
+    }
+
+    public int GetRiverNeighbourCount (River river)
+    {
+        int count = 0;
+
+        if (right.rivers.Count > 0 && right.rivers.Contains (river))
+        {
+            count++;
+        }
+        if (top.rivers.Count > 0 && top.rivers.Contains (river))
+        {
+            count++;
+        }
+        if (left.rivers.Count > 0 && left.rivers.Contains (river))
+        {
+            count++;
+        }
+        if (bottom.rivers.Count > 0 && bottom.rivers.Contains (river))
+        {
+            count++;
+        }
+
+        return count;
+    }
+
+    public void SetRiverPath (River river)
+    {
+        if (!isCollidable)
+        {
+            return;
+        }
+
+        if (!rivers.Contains (river))
+        {
+            rivers.Add (river);
+        }
     }
 
 }
