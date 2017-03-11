@@ -230,6 +230,24 @@ public class Generator : MonoBehaviour {
                     t.isCollidable = true;
 				}
 
+                // Adjust heat map based on height, higher is colder
+                if (t.heightType == HeightType.Forest)
+                {
+                    heatData.data [x, y] -= 0.1f * t.heightValue;
+                }
+                else if (t.heightType == HeightType.Rock)
+                {
+                    heatData.data [x, y] -= 0.25f * t.heightValue;
+                }
+                else if (t.heightType == HeightType.Snow)
+                {
+                    heatData.data [x, y] -= 0.4f * t.heightValue;
+                }
+                else
+                {
+                    heatData.data [x, y] += 0.1f * t.heightValue;
+                }
+
                 // Set heat value
                 float heatValue = heatData.data [x, y];
                 heatValue = (heatValue - heatData.min) / (heatData.max - heatData.min);
