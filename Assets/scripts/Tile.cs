@@ -51,7 +51,7 @@ public class Tile {
     public bool isCollidable;
     public bool isFloodFilled;
 
-    public Color colour = Color.black;
+    public Color colour = Color.blue;
 
     public List<River> rivers = new List<River> ();
 

@@ -101,6 +101,8 @@ public class Generator : MonoBehaviour {
     private List<River> rivers = new List<River> ();
     private List<RiverGroup> riverGroups = new List<RiverGroup> ();
 
+    private int moistureRadius = 60;
+
     private void Start ()
     {
         heightMapRenderer = transform.Find ("heightTexture").GetComponent<MeshRenderer> ();
@@ -116,6 +118,7 @@ public class Generator : MonoBehaviour {
         GenerateRivers ();
         BuildRiverGroups ();
         DigRiverGroups ();
+        AdjustMoistureMap ();
 
         UpdateBitmasks ();
         FloodFill ();
@@ -790,9 +793,99 @@ public class Generator : MonoBehaviour {
         }
     }
 
-    private void DigRiver (River river, River longest)
+    private void DigRiver (River river, River parent)
     {
 
+    }
+
+    private void AdjustMoistureMap ()
+    {
+        for (int x = 0; x < width; x++)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                Tile t = tiles [x, y];
+                if (t.heightType == HeightType.River)
+                {
+                    AddMoisture (t, moistureRadius);
+                }
+            }
+        }
+    }
+
+    private void AddMoisture (Tile t, int radius)
+    {
+        int startX = MathHelper.Mod (t.x - radius, width);
+        int endX = MathHelper.Mod (t.x + radius, width);
+
+        Vector2 centre = new Vector2 (t.x, t.y);
+        int current = radius;
+
+        while (current > 0)
+        {
+            int x1 = MathHelper.Mod (t.x - current, width);
+            int x2 = MathHelper.Mod (t.x + current, width);
+            int y = t.y;
+
+            AddMoisture (tiles [x1, y], 0.025f / (centre - new Vector2 (x1, y)).magnitude); 
+
+            for (int i = 0; i < current; i++)
+            {
+                AddMoisture (
+                    tiles [x1, MathHelper.Mod (y + i + 1, height)],
+                    0.025f / (centre - new Vector2 (x1, MathHelper.Mod (y + i + 1, height))).magnitude
+                );
+                AddMoisture (
+                    tiles [x1, MathHelper.Mod (y - (i + 1), height)],
+                    0.025f / (centre - new Vector2 (x1, MathHelper.Mod (y - (i + 1), height))).magnitude
+                );
+
+                AddMoisture (
+                    tiles [x2, MathHelper.Mod (y + i + 1, height)],
+                    0.025f / (centre - new Vector2 (x2, MathHelper.Mod (y + i + 1, height))).magnitude
+                );
+                AddMoisture (
+                    tiles [x2, MathHelper.Mod (y - (i + 1), height)],
+                    0.025f / (centre - new Vector2 (x2, MathHelper.Mod (y - (i + 1), height))).magnitude
+                );
+            }
+
+            current--;
+        }
+    }
+
+    private void AddMoisture (Tile t, float amount)
+    {
+        moistureData.data [t.x, t.y] += amount;
+        t.moistureValue += amount;
+
+        t.moistureValue = (t.moistureValue > 1) ? 1 : t.moistureValue;
+
+        // Reassign moisture type
+        if (t.moistureValue < drierValue)
+        {
+            t.moistureType = MoistureType.Driest;
+        }
+        else if (t.moistureValue < dryValue)
+        {
+            t.moistureType = MoistureType.Drier;
+        }
+        else if (t.moistureValue < wetValue)
+        {
+            t.moistureType = MoistureType.Dry;
+        }
+        else if (t.moistureValue < wetterValue)
+        {
+            t.moistureType = MoistureType.Wet;
+        }
+        else if (t.moistureValue < wettestValue)
+        {
+            t.moistureType = MoistureType.Wetter;
+        }
+        else
+        {
+            t.moistureType = MoistureType.Wettest;
+        }
     }
 
     private void UpdateNeighbours ()

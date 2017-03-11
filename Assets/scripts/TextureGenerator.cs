@@ -164,10 +164,10 @@ public static class TextureGenerator {
                     pixels [x + width * y] = WettestColour;
                 }
 
-                if (t.heightType == HeightType.River)
-                {
-                    pixels [x + width * y] = Color.blue;
-                }
+                // if (t.heightType == HeightType.River)
+                // {
+                //     pixels [x + width * y] = Color.blue;
+                // }
             }
         }
 
