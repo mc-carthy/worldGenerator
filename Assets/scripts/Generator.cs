@@ -114,6 +114,8 @@ public class Generator : MonoBehaviour {
         UpdateNeighbours ();
 
         GenerateRivers ();
+        BuildRiverGroups ();
+        DigRiverGroups ();
 
         UpdateBitmasks ();
         FloodFill ();
@@ -641,6 +643,156 @@ public class Generator : MonoBehaviour {
                 }
             }
         }
+    }
+
+    private void DigRiverGroups ()
+    {
+        for (int i = 0; i < riverGroups.Count; i++)
+        {
+            RiverGroup group = riverGroups [i];
+            River longest = null;
+
+            // Find the longest river in the group
+            for (int j = 0; j < group.rivers.Count; j++)
+            {
+                River river = group.rivers [j];
+                if (longest == null)
+                {
+                    longest = river;
+                }
+                else if (longest.tiles.Count < river.tiles.Count)
+                {
+                    longest = river;
+                }
+            }
+            
+            if (longest != null)
+            {
+                // Dig out the longest path first
+                DigRiver (longest);
+
+                for (int j = 0; j < group.rivers.Count; j++)
+                {
+                    River river = group.rivers [j];
+                    if (river != longest)
+                    {
+                        DigRiver (river, longest);
+                    }
+                }
+            }
+        }
+    }
+
+    private void DigRiver (River river)
+    {
+        int counter = 0;
+
+        // How wide is the river
+        int size = Random.Range (1, 5);
+        river.length = river.tiles.Count;
+
+        // Randomised size change
+        int two = river.length / 2;
+        int three = two / 2;
+        int four = three / 2;
+        int five = four / 2;
+
+        int twoMin = two / 3;
+        int threeMin = three / 3;
+        int fourMin = four / 3;
+        int fiveMin = five / 3;
+
+        // Randomise length of each size
+        int count1 = Random.Range (fiveMin, five);
+        if (size < 4)
+        {
+            count1 = 0;
+        }
+
+        int count2 = count1 + Random.Range (fourMin, four);
+        if (size < 3)
+        {
+            count1 = 0;
+            count2 = 0;
+        }
+
+        int count3 = count2 + Random.Range (threeMin, three);
+        if (size < 2)
+        {
+            count1 = 0;
+            count2 = 0;
+            count3 = 0;
+        }
+
+        int count4 = count3 + Random.Range (twoMin, two);
+
+        // Ensure we don't dig past the river path
+        if (count4 > river.length)
+        {
+            int extra = count4 - river.length;
+            
+            while (extra > 0)
+            {
+                if (count1 > 0)
+                {
+                    count1--;
+                    count2--;
+                    count3--;
+                    count4--;
+                    extra--;
+                }
+                else if (count2 > 0)
+                {
+                    count2--;
+                    count3--;
+                    count4--;
+                    extra--;
+                }
+                else if (count3 > 0)
+                {
+                    count3--;
+                    count4--;
+                    extra--;
+                }
+                else if (count4 > 0)
+                {
+                    count4--;
+                    extra--;
+                }
+            }
+        }
+
+        // Dig it
+        for (int i = river.tiles.Count - 1; i >= 0; i--)
+        {
+            Tile t = river.tiles [i];
+            if (counter < count1)
+            {
+                t.DigRiver (river, 4);
+            }
+            else if (counter < count2)
+            {
+                t.DigRiver (river, 3);
+            }
+            else if (counter < count3)
+            {
+                t.DigRiver (river, 2);
+            }
+            else if (counter < count4)
+            {
+                t.DigRiver (river, 1);
+            }
+            else
+            {
+                t.DigRiver (river, 0);
+            }
+            counter++;
+        }
+    }
+
+    private void DigRiver (River river, River longest)
+    {
+
     }
 
     private void UpdateNeighbours ()

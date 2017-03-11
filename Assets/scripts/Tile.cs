@@ -10,7 +10,8 @@ public enum HeightType
     Grass = 5,
     Forest = 6,
     Rock = 7,
-    Snow = 8
+    Snow = 8,
+    River = 9
 }
 
 public enum HeatType {
@@ -160,6 +161,75 @@ public class Tile {
         {
             rivers.Add (river);
         }
+    }
+
+    public void DigRiver (River river, int width)
+    {
+        SetRiverTile (river);
+        riverSize = width;
+
+        if (width == 1) {
+			bottom.SetRiverTile (river);
+			right.SetRiverTile (river);
+			bottom.right.SetRiverTile (river);				
+		}
+
+		if (width == 2) {
+			bottom.SetRiverTile (river);
+			right.SetRiverTile (river);
+			bottom.right.SetRiverTile (river);
+			top.SetRiverTile (river);
+			top.left.SetRiverTile (river);
+			top.right.SetRiverTile (river);
+			left.SetRiverTile (river);
+			left.bottom.SetRiverTile (river);
+		}
+
+		if (width == 3) {
+			bottom.SetRiverTile (river);
+			right.SetRiverTile (river);
+			bottom.right.SetRiverTile (river);
+			top.SetRiverTile (river);
+			top.left.SetRiverTile (river);
+			top.right.SetRiverTile (river);
+			left.SetRiverTile (river);
+			left.bottom.SetRiverTile (river);
+			right.right.SetRiverTile (river);
+			right.right.bottom.SetRiverTile (river);
+			bottom.bottom.SetRiverTile (river);
+			bottom.bottom.right.SetRiverTile (river);
+		}
+
+		if (width == 4) {
+			bottom.SetRiverTile (river);
+			right.SetRiverTile (river);
+			bottom.right.SetRiverTile (river);
+			top.SetRiverTile (river);
+			top.right.SetRiverTile (river);
+			left.SetRiverTile (river);
+			left.bottom.SetRiverTile (river);
+			right.right.SetRiverTile (river);
+			right.right.bottom.SetRiverTile (river);
+			bottom.bottom.SetRiverTile (river);
+			bottom.bottom.right.SetRiverTile (river);
+			left.bottom.bottom.SetRiverTile (river);
+			left.left.bottom.SetRiverTile (river);
+			left.left.SetRiverTile (river);
+			left.left.top.SetRiverTile (river);
+			left.top.SetRiverTile (river);
+			left.top.top.SetRiverTile (river);
+			top.top.SetRiverTile (river);
+			top.top.right.SetRiverTile (river);
+			top.right.right.SetRiverTile (river);
+		}	
+    }
+
+    private void SetRiverTile (River river)
+    {
+        SetRiverPath (river);
+        heightType = HeightType.River;
+        heightValue = 0;
+        isCollidable = false;
     }
 
 }
