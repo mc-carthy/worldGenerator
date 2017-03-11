@@ -11,7 +11,7 @@ public static class TextureGenerator {
 	private static Color RockColor = new Color (0.5f, 0.5f, 0.5f, 1f);
 	private static Color SnowColor = new Color (1f, 1f, 1f, 1f);
 
-	public static Texture2D GenerateTexture (int width, int height, Tile [,] tiles)
+	public static Texture2D GenerateHeightMapTexture (int width, int height, Tile [,] tiles)
     {
         Texture2D texture = new Texture2D (width, height);
         Color [] pixels = new Color [width * height];
@@ -54,6 +54,32 @@ public static class TextureGenerator {
                 }
 
                 // pixels [x + y * width] = (tiles [x, y].isCollidable) ? Color.green : Color.blue;
+            }
+        }
+
+        texture.SetPixels (pixels);
+        texture.wrapMode = TextureWrapMode.Clamp;
+        texture.Apply ();
+
+        return texture;
+    }
+
+    public static Texture2D GenerateHeatMapTexture (int width, int height, Tile [,] tiles)
+    {
+        Texture2D texture = new Texture2D (width, height);
+        Color [] pixels = new Color [width * height];
+
+        for (int x = 0; x < width; x++)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                pixels [x + width * y] = Color.Lerp (Color.blue, Color.red, tiles [x, y].heatValue);
+
+                // Darken edges
+                if (tiles[x,y].bitmask != 15)
+                {
+					pixels [x + y * width] = Color.Lerp (pixels[x + y * width], Color.black, 0.4f);
+                }
             }
         }
 

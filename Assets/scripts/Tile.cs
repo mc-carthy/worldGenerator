@@ -10,10 +10,23 @@
     Snow = 8
 }
 
+public enum HeatType {
+    Coldest = 0,
+    Colder = 1,
+    Cold = 2,
+    Warm = 3,
+    Warmer = 4,
+    Warmest = 5
+}
+
 public class Tile {
 
 	public HeightType heightType;
 	public float heightValue { get; set; }
+
+    public HeatType heatType;
+    public float heatValue { get; set; 
+    }
     public int x, y;
 
     public Tile right, top, left, bottom;

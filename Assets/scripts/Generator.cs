@@ -20,7 +20,7 @@ public class Generator : MonoBehaviour {
 	[SerializeField]
 	private bool useRandomSeed;
 
-    [HeaderAttribute ("Biome Colours")]
+    [HeaderAttribute ("Height Map")]
 	[SerializeField]
 	private float DeepWater = 0.2f;
 	[SerializeField]
@@ -34,11 +34,33 @@ public class Generator : MonoBehaviour {
 	[SerializeField]
 	private float Rock = 0.9f;
 
+	[Header("Heat Map")]
+	[SerializeField]
+	int heatOctaves = 4;
+	[SerializeField]
+	double heatFrequency = 3.0;
+	[SerializeField]
+	float coldestValue = 0.05f;
+	[SerializeField]
+	float colderValue = 0.18f;
+	[SerializeField]
+	float coldValue = 0.4f;
+	[SerializeField]
+	float warmValue = 0.6f;
+	[SerializeField]
+	float warmerValue = 0.8f;
+
 
     private ImplicitFractal heightMap;
+    private ImplicitCombiner heatMap;
+
     private MapData heightData;
+    private MapData heatData;
+    
     private Tile [,] tiles;
+    
     private MeshRenderer heightMapRenderer;
+    private MeshRenderer heatMapRenderer;
 
     private List<TileGroup> waters = new List<TileGroup> ();
     private List<TileGroup> lands = new List<TileGroup> ();
@@ -46,15 +68,18 @@ public class Generator : MonoBehaviour {
     private void Start ()
     {
         heightMapRenderer = transform.Find ("heightTexture").GetComponent<MeshRenderer> ();
+        heatMapRenderer = transform.Find ("heatTexture").GetComponent<MeshRenderer> ();
+
         Initialise ();
-        GetData (heightMap, ref heightData);
+        GetData ();
         LoadTiles ();
 
         UpdateNeighbours ();
         UpdateBitmasks ();
         FloodFill ();
 
-        heightMapRenderer.materials [0].mainTexture = TextureGenerator.GenerateTexture (width, height, tiles);
+        heightMapRenderer.materials [0].mainTexture = TextureGenerator.GenerateHeightMapTexture (width, height, tiles);
+        heatMapRenderer.materials [0].mainTexture = TextureGenerator.GenerateHeatMapTexture (width, height, tiles);
     }
 
     private void Update ()
@@ -62,7 +87,7 @@ public class Generator : MonoBehaviour {
         if (Input.GetKeyDown (KeyCode.Space))
         {
             Initialise ();
-            GetData (heightMap, ref heightData);
+            GetData ();
             LoadTiles ();
         }
     }
@@ -76,6 +101,7 @@ public class Generator : MonoBehaviour {
 
 		System.Random pseudoRandom = new System.Random (seed.GetHashCode ());
 
+        // Initialise heightMap
         heightMap = new ImplicitFractal (
             FractalType.MULTI,
             BasisType.SIMPLEX,
@@ -84,13 +110,32 @@ public class Generator : MonoBehaviour {
             terrainFrequency,
             pseudoRandom.Next (0, int.MaxValue)
         );
+
+        // Initialise heatMap
+        ImplicitGradient gradient  = new ImplicitGradient (1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1);
+        ImplicitFractal heatFractal = new ImplicitFractal (
+            FractalType.MULTI,
+            BasisType.SIMPLEX,
+            InterpolationType.QUINTIC,
+            heatOctaves,
+            heatFrequency,
+            pseudoRandom.Next (0, int.MaxValue)
+        );
+
+        heatMap = new ImplicitCombiner (CombinerType.MULTIPLY);
+        heatMap.AddSource (gradient);
+        heatMap.AddSource (heatFractal);
+
+
     }
 
     // Get data from noise module
-    private void GetData (ImplicitModuleBase module, ref MapData mapData)
+    private void GetData ()
     {
-        mapData = new MapData (width, height);
+        heightData = new MapData (width, height);
+        heatData = new MapData (width, height);
 
+        // Get height data
         for (int x = 0; x < width; x++)
         {
             for (int y = 0; y < height; y++)
@@ -112,13 +157,18 @@ public class Generator : MonoBehaviour {
                 float nz = x1 + Mathf.Sin (s * 2 * Mathf.PI) * dx / (2 * Mathf.PI);
                 float nw = y1 + Mathf.Sin (t * 2 * Mathf.PI) * dy / (2 * Mathf.PI);
 
-                float value = (float) heightMap.Get (nx, ny, nz, nw);
+                float heightValue = (float) heightMap.Get (nx, ny, nz, nw);
+                float heatValue = (float) heatMap.Get (nx, ny, nz, nw);
 
                 // Keep track of the min/max values
-                mapData.max = (value > mapData.max) ? value : mapData.max;
-                mapData.min = (value < mapData.min) ? value : mapData.min;
+                heightData.max = (heightValue > heightData.max) ? heightValue : heightData.max;
+                heightData.min = (heightValue < heightData.min) ? heightValue : heightData.min;
 
-                mapData.data [x, y] = value;
+                heatData.max = (heatValue > heatData.max) ? heatValue : heatData.max;
+                heatData.min = (heatValue < heatData.min) ? heatValue : heatData.min;
+
+                heightData.data [x, y] = heightValue;
+                heatData.data [x, y] = heatValue;
             }
         }
     }
@@ -179,6 +229,11 @@ public class Generator : MonoBehaviour {
 					t.heightType = HeightType.Snow;
                     t.isCollidable = true;
 				}
+
+                // Set heat value
+                float heatValue = heatData.data [x, y];
+                heatValue = (heatValue - heatData.min) / (heatData.max - heatData.min);
+                t.heatValue = heatValue;
 
                 tiles [x, y] = t;
             }
