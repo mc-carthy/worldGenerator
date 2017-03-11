@@ -94,6 +94,7 @@ public class Generator : MonoBehaviour {
     private MeshRenderer heightMapRenderer;
     private MeshRenderer heatMapRenderer;
     private MeshRenderer moistureMapRenderer;
+    private MeshRenderer biomeMapRenderer;
 
     private List<TileGroup> waters = new List<TileGroup> ();
     private List<TileGroup> lands = new List<TileGroup> ();
@@ -103,11 +104,23 @@ public class Generator : MonoBehaviour {
 
     private int moistureRadius = 60;
 
+    private BiomeType [,] biomeTable = new BiomeType [6, 6] {
+       // Coldest        Colder            Cold                    Warm                           Warmer                        Warmest
+        { BiomeType.Ice, BiomeType.Tundra, BiomeType.Grassland,    BiomeType.Desert,              BiomeType.Desert,             BiomeType.Desert             }, // Driest
+        { BiomeType.Ice, BiomeType.Tundra, BiomeType.Grassland,    BiomeType.Desert,              BiomeType.Desert,             BiomeType.Desert             }, // Drier
+        { BiomeType.Ice, BiomeType.Tundra, BiomeType.Woodland,     BiomeType.Woodland,            BiomeType.Savanna,            BiomeType.Savanna            }, // Dry
+        { BiomeType.Ice, BiomeType.Tundra, BiomeType.BorealForest, BiomeType.Woodland,            BiomeType.Savanna,            BiomeType.Savanna            }, // Wet
+        { BiomeType.Ice, BiomeType.Tundra, BiomeType.BorealForest, BiomeType.SeasonalForest,      BiomeType.TropicalRainforest, BiomeType.TropicalRainforest }, // Wetter
+        { BiomeType.Ice, BiomeType.Tundra, BiomeType.BorealForest, BiomeType.TemperateRainforest, BiomeType.TropicalRainforest, BiomeType.TropicalRainforest }  // Wettest
+    };
+
     private void Start ()
     {
         heightMapRenderer = transform.Find ("heightTexture").GetComponent<MeshRenderer> ();
         heatMapRenderer = transform.Find ("heatTexture").GetComponent<MeshRenderer> ();
         moistureMapRenderer = transform.Find ("moistureTexture").GetComponent<MeshRenderer> ();
+        biomeMapRenderer = transform.Find ("biomeTexture").GetComponent<MeshRenderer> ();
+
 
         Initialise ();
         GetData ();
@@ -123,9 +136,14 @@ public class Generator : MonoBehaviour {
         UpdateBitmasks ();
         FloodFill ();
 
+        GenerateBiomeMap ();
+        UpdateBiomeBitmasks ();
+
         heightMapRenderer.materials [0].mainTexture = TextureGenerator.GenerateHeightMapTexture (width, height, tiles);
         heatMapRenderer.materials [0].mainTexture = TextureGenerator.GenerateHeatMapTexture (width, height, tiles);
         moistureMapRenderer.materials [0].mainTexture = TextureGenerator.GenerateMoistureMapTexture (width, height, tiles);
+        biomeMapRenderer.materials [0].mainTexture = TextureGenerator.GenerateBiomeMapTexture (width, height, tiles, coldestValue, colderValue, coldValue);
+        
     }
 
     private void Update ()
@@ -390,6 +408,23 @@ public class Generator : MonoBehaviour {
                 }
 
                 tiles [x, y] = t;
+            }
+        }
+    }
+
+    private void GenerateBiomeMap ()
+    {
+        for (int x = 0; x < width; x++)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                if (!tiles [x, y].isCollidable)
+                {
+                    continue;
+                }
+
+                Tile t = tiles [x, y];
+                t.biomeType = GetBiomeType (t);
             }
         }
     }
@@ -1065,6 +1100,17 @@ public class Generator : MonoBehaviour {
         }
     }
 
+    private void UpdateBiomeBitmasks ()
+    {
+        for (int x = 0; x < width; x++)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                tiles [x, y].UpdateBiomeBitmask ();
+            }
+        }
+    }
+
     private void FloodFill ()
     {
         Stack<Tile> stack = new Stack<Tile> ();
@@ -1178,6 +1224,11 @@ public class Generator : MonoBehaviour {
     private Tile GetBottom (Tile t)
     {
         return tiles [t.x, MathHelper.Mod (t.y + 1, height)];
+    }
+
+    public BiomeType GetBiomeType (Tile tile)
+    {
+        return biomeTable [(int) tile.moistureType, (int) tile.heatType];
     }
 
 }

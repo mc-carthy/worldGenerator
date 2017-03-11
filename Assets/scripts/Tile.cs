@@ -32,6 +32,19 @@ public enum MoistureType {
     Driest
 }
 
+public enum BiomeType {
+	Desert,
+	Savanna,
+	TropicalRainforest,
+	Grassland,
+	Woodland,
+	SeasonalForest,
+	TemperateRainforest,
+	BorealForest,
+	Tundra,
+	Ice
+}
+
 public class Tile {
 
 	public HeightType heightType;
@@ -42,6 +55,9 @@ public class Tile {
 
     public MoistureType moistureType;
     public float moistureValue { get; set; }
+
+    public BiomeType biomeType;
+    public int biomeBitmask;
     
     public int x, y;
 
@@ -85,6 +101,22 @@ public class Tile {
 
         bitmask = count;
     }
+
+	public void UpdateBiomeBitmask ()
+	{
+		int count = 0;
+		
+		if (isCollidable && right != null && right.biomeType == biomeType)
+			count += 1;
+		if (isCollidable && top != null && top.biomeType == biomeType)
+			count += 2;
+		if (isCollidable && left != null && left.biomeType == biomeType)
+			count += 4;
+		if (isCollidable && bottom != null && bottom.biomeType == biomeType)
+			count += 8;
+		
+		biomeBitmask = count;
+	}
 
     public Direction GetLowestNeighbour ()
     {
