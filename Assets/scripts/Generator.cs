@@ -793,9 +793,162 @@ public class Generator : MonoBehaviour {
         }
     }
 
+    // Dig river based off parent tributary
     private void DigRiver (River river, River parent)
     {
+        int intersectionID = 0;
+        int intersectionSize = 0;
 
+        // Find intersection point
+        for (int i = 0; i < river.tiles.Count; i++)
+        {
+            Tile t1 = river.tiles [i];
+            for (int j = 0; j < parent.tiles.Count; j++)
+            {
+                Tile t2 = parent.tiles [j];
+
+                if (t1 == t2)
+                {
+                    intersectionID = i;
+                    intersectionSize = t2.riverSize;
+                }
+            }
+        }
+
+        int counter = 0;
+        int intersectionCount = river.tiles.Count - intersectionID;
+        int size = Random.Range (intersectionSize, 5);
+        river.length = river.tiles.Count;
+
+        // Randomise size change
+        int two = river.length / 2;
+        int three = two / 2;
+        int four = three / 2;
+        int five = four / 2;
+
+        int twoMin = two / 3;
+        int threeMin = three / 3;
+        int fourMin = four / 3;
+        int fiveMin = five / 3;
+
+        // Randomise length of each size
+        int count1 = Random.Range (fiveMin, five);
+        if (size < 4)
+        {
+            count1 = 0;
+        }
+
+        int count2 = count1 + Random.Range (fourMin, four);
+        if (size < 3)
+        {
+            count1 = 0;
+            count2 = 0;
+        }
+
+        int count3 = count2 + Random.Range (threeMin, three);
+        if (size < 2)
+        {
+            count1 = 0;
+            count2 = 0;
+            count3 = 0;
+        }
+
+        int count4 = count3 + Random.Range (twoMin, two);
+
+        // Ensure we don't dig past the river path
+        if (count4 > river.length)
+        {
+            int extra = count4 - river.length;
+            
+            while (extra > 0)
+            {
+                if (count1 > 0)
+                {
+                    count1--;
+                    count2--;
+                    count3--;
+                    count4--;
+                    extra--;
+                }
+                else if (count2 > 0)
+                {
+                    count2--;
+                    count3--;
+                    count4--;
+                    extra--;
+                }
+                else if (count3 > 0)
+                {
+                    count3--;
+                    count4--;
+                    extra--;
+                }
+                else if (count4 > 0)
+                {
+                    count4--;
+                    extra--;
+                }
+            }
+        }
+
+        // Adjust size of river at intersection point
+        if (intersectionSize == 1)
+        {
+            count4 = intersectionCount;
+            count1 = 0;
+            count2 = 0;
+            count3 = 0;
+        }
+        else if (intersectionSize == 2)
+        {
+            count3 = intersectionCount;
+            count1 = 0;
+            count2 = 0;
+        }
+        else if (intersectionSize == 3)
+        {
+            count2 = intersectionCount;
+            count1 = 0;
+        }
+        else if (intersectionCount == 4)
+        {
+            count1 = intersectionCount;
+        }
+        else
+        {
+            count1 = 0;
+            count2 = 0;
+            count3 = 0;
+            count4 = 0;
+        }
+
+        // Dig the river
+        for (int i = river.tiles.Count - 1; i >= 0; i--)
+        {
+            Tile t = river.tiles [i];
+
+            if (counter < count1)
+            {
+                t.DigRiver (river, 4);
+            }
+            else if (counter < count2)
+            {
+                t.DigRiver (river, 3);
+            }
+            else if (counter < count3)
+            {
+                t.DigRiver (river, 2);
+            }
+            else if (counter < count4)
+            {
+                t.DigRiver (river, 1);
+            }
+            else
+            {
+                t.DigRiver (river, 0);
+            }
+            counter++;
+        }
     }
 
     private void AdjustMoistureMap ()
@@ -815,9 +968,6 @@ public class Generator : MonoBehaviour {
 
     private void AddMoisture (Tile t, int radius)
     {
-        int startX = MathHelper.Mod (t.x - radius, width);
-        int endX = MathHelper.Mod (t.x + radius, width);
-
         Vector2 centre = new Vector2 (t.x, t.y);
         int current = radius;
 
