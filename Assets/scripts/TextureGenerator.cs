@@ -27,6 +27,10 @@ public static class TextureGenerator {
     private static Color WetterColour = new Color (20f / 255f, 70f / 255f, 255f / 255f, 1f);
     private static Color WettestColour = new Color(0f / 255f, 0f / 255f, 100f / 255f, 1f);
 
+    // Water
+	private static Color RiverWater = new Color (65f / 255f, 110f / 255f, 179f / 255f, 1f);
+
+
 	public static Texture2D GenerateHeightMapTexture (int width, int height, Tile [,] tiles)
     {
         Texture2D texture = new Texture2D (width, height);
@@ -61,6 +65,9 @@ public static class TextureGenerator {
 				case HeightType.Snow:
 					pixels[x + y * width] = SnowColour;
 					break;
+                case HeightType.River:
+                    pixels [x + y * width] = RiverWater;
+                    break;
 				}
 
                 // Darken edges
