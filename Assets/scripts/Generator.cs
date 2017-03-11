@@ -316,6 +316,24 @@ public class Generator : MonoBehaviour {
                     t.heatType = HeatType.Warmest;
                 }
 
+                // Adjust moisture map based on height
+                if (t.heightType == HeightType.DeepWater)
+                {
+                    moistureData.data [x, y] += 8f * t.heightValue;
+                }
+                else if (t.heightType == HeightType.ShallowWater)
+                {
+                    moistureData.data [x, y] += 3f * t.heightValue;
+                }
+                else if (t.heightType == HeightType.Shore)
+                {
+                    moistureData.data [x, y] += 1f * t.heightValue;
+                }
+                else if (t.heightType == HeightType.Sand)
+                {
+                    moistureData.data [x, y] += 0.25f * t.heightValue;
+                }
+
                 // Set moisture value
                 float moistureValue = moistureData.data [x, y];
                 moistureValue = (moistureValue - moistureData.min) / (moistureData.max - moistureData.min);
