@@ -186,8 +186,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a328af79fa1214fbe9ae0ac10ede6847, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  width: 256
-  height: 256
+  width: 512
+  height: 512
   terrainOcatves: 6
   terrainFrequency: 1.25
   seed: 0

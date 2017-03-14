@@ -47,6 +47,9 @@ public enum BiomeType {
 
 public class Tile {
 
+    public float cloud1Value { get; set; }
+    public float cloud2Value { get; set; }
+
 	public HeightType heightType;
 	public float heightValue { get; set; }
 

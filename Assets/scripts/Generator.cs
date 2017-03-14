@@ -2,109 +2,106 @@
 using System.Collections.Generic;
 using AccidentalNoise;
 
-public class Generator : MonoBehaviour {
+public abstract class Generator : MonoBehaviour {
 
 	// Adjustable variables
     [SerializeField]
-    private int width;
+    protected int width;
     [SerializeField]
-    private int height;
+    protected int height;
     // TODO
     [SerializeField]
-    private int terrainOcatves;
+    protected int terrainOcatves;
     // TODO
     [SerializeField]
-    private double terrainFrequency;
+    protected double terrainFrequency;
 	[SerializeField]
-	private int seed;
+	protected int seed;
 	[SerializeField]
-	private bool useRandomSeed;
+	protected bool useRandomSeed;
 
     [HeaderAttribute ("Height Map")]
 	[SerializeField]
-	private float deepWater = 0.2f;
+	protected float deepWater = 0.2f;
 	[SerializeField]
-	private float shallowWater = 0.4f;	
+	protected float shallowWater = 0.4f;	
 	[SerializeField]
-	private float sand = 0.5f;
+	protected float sand = 0.5f;
 	[SerializeField]
-	private float grass = 0.7f;
+	protected float grass = 0.7f;
 	[SerializeField]
-	private float forest = 0.8f;
+	protected float forest = 0.8f;
 	[SerializeField]
-	private float rock = 0.9f;
+	protected float rock = 0.9f;
 
 	[HeaderAttribute ("Heat Map")]
 	[SerializeField]
-	private int heatOctaves = 4;
+	protected int heatOctaves = 4;
 	[SerializeField]
-	private double heatFrequency = 3.0;
+	protected double heatFrequency = 3.0;
 	[SerializeField]
-	private float coldestValue = 0.05f;
+	protected float coldestValue = 0.05f;
 	[SerializeField]
-	private float colderValue = 0.18f;
+	protected float colderValue = 0.18f;
 	[SerializeField]
-	private float coldValue = 0.4f;
+	protected float coldValue = 0.4f;
 	[SerializeField]
-	private float warmValue = 0.6f;
+	protected float warmValue = 0.6f;
 	[SerializeField]
-	private float warmerValue = 0.8f;
+	protected float warmerValue = 0.8f;
 
 	[HeaderAttribute ("Moisture Map")]
 	[SerializeField]
-	private int moistureOctaves = 4;
+	protected int moistureOctaves = 4;
 	[SerializeField]
-	private double moistureFrequency = 3.0;
+	protected double moistureFrequency = 3.0;
 	[SerializeField]
-	private float drierValue = 0.27f;
+	protected float drierValue = 0.27f;
 	[SerializeField]
-	private float dryValue = 0.4f;
+	protected float dryValue = 0.4f;
 	[SerializeField]
-	private float wetValue = 0.6f;
+	protected float wetValue = 0.6f;
 	[SerializeField]
-	private float wetterValue = 0.8f;
+	protected float wetterValue = 0.8f;
 	[SerializeField]
-	private float wettestValue = 0.9f;
+	protected float wettestValue = 0.9f;
 
     [HeaderAttribute ("Rivers")]
     [SerializeField]
-    private int totalRiverCount = 40;
+    protected int totalRiverCount = 40;
 	[SerializeField]
-	private float minRiverHeight = 0.6f;
+	protected float minRiverHeight = 0.6f;
 	[SerializeField]
-	private int maxRiverAttempts = 1000;
+	protected int maxRiverAttempts = 1000;
 	[SerializeField]
-	private int minRiverTurns = 18;
+	protected int minRiverTurns = 18;
 	[SerializeField]
-	private int minRiverLength = 20;
+	protected int minRiverLength = 20;
 	[SerializeField]
-	private int maxRiverIntersections = 2;
+	protected int maxRiverIntersections = 2;
 
-
-    private ImplicitFractal heightMap;
-    private ImplicitCombiner heatMap;
-    private ImplicitFractal moistureMap;
-
-    private MapData heightData;
-    private MapData heatData;
-    private MapData moistureData;
+    protected MapData heightData;
+    protected MapData heatData;
+    protected MapData moistureData;
+    protected MapData clouds1;
+    protected MapData clouds2;
     
-    private Tile [,] tiles;
+    protected Tile [,] tiles;
     
-    private MeshRenderer heightMapRenderer;
-    private MeshRenderer heatMapRenderer;
-    private MeshRenderer moistureMapRenderer;
-    private MeshRenderer biomeMapRenderer;
+    protected MeshRenderer heightMapRenderer;
+    protected MeshRenderer heatMapRenderer;
+    protected MeshRenderer moistureMapRenderer;
+    protected MeshRenderer biomeMapRenderer;
 
-    private List<TileGroup> waters = new List<TileGroup> ();
-    private List<TileGroup> lands = new List<TileGroup> ();
+    protected List<TileGroup> waters = new List<TileGroup> ();
+    protected List<TileGroup> lands = new List<TileGroup> ();
 
-    private List<River> rivers = new List<River> ();
-    private List<RiverGroup> riverGroups = new List<RiverGroup> ();
+    protected List<River> rivers = new List<River> ();
+    protected List<RiverGroup> riverGroups = new List<RiverGroup> ();
 
-    private int moistureRadius = 60;
+    protected int moistureRadius = 60;
 
-    private BiomeType [,] biomeTable = new BiomeType [6, 6] {
+    protected BiomeType [,] biomeTable = new BiomeType [6, 6] {
        // Coldest        Colder            Cold                    Warm                           Warmer                        Warmest
         { BiomeType.Ice, BiomeType.Tundra, BiomeType.Grassland,    BiomeType.Desert,              BiomeType.Desert,             BiomeType.Desert             }, // Driest
         { BiomeType.Ice, BiomeType.Tundra, BiomeType.Grassland,    BiomeType.Desert,              BiomeType.Desert,             BiomeType.Desert             }, // Drier
@@ -116,6 +113,37 @@ public class Generator : MonoBehaviour {
 
     private void Start ()
     {
+        Instantiate ();
+        Generate ();
+    }
+
+    private void Update ()
+    {
+        if (Input.GetKeyDown (KeyCode.Space))
+        {
+            Initialise ();
+            Generate ();
+        }
+    }
+
+    // Get data from noise module
+    protected abstract void GetData ();
+
+    // Get Tile neighbours
+    protected abstract Tile GetRight (Tile t);   
+    protected abstract Tile GetTop (Tile t);
+    protected abstract Tile GetLeft (Tile t);
+    protected abstract Tile GetBottom (Tile t);
+
+    protected abstract void Initialise ();
+
+    protected virtual void Instantiate ()
+    {
+		if (useRandomSeed)
+		{
+			seed = (int) System.DateTime.Now.Ticks;
+		}
+
         heightMapRenderer = transform.Find ("heightTexture").GetComponent<MeshRenderer> ();
         heatMapRenderer = transform.Find ("heatTexture").GetComponent<MeshRenderer> ();
         moistureMapRenderer = transform.Find ("moistureTexture").GetComponent<MeshRenderer> ();
@@ -123,6 +151,10 @@ public class Generator : MonoBehaviour {
 
 
         Initialise ();
+    }
+
+    protected virtual void Generate ()
+    {
         GetData ();
         LoadTiles ();
 
@@ -144,113 +176,6 @@ public class Generator : MonoBehaviour {
         moistureMapRenderer.materials [0].mainTexture = TextureGenerator.GenerateMoistureMapTexture (width, height, tiles);
         biomeMapRenderer.materials [0].mainTexture = TextureGenerator.GenerateBiomeMapTexture (width, height, tiles, coldestValue, colderValue, coldValue);
         
-    }
-
-    private void Update ()
-    {
-        if (Input.GetKeyDown (KeyCode.Space))
-        {
-            Initialise ();
-            GetData ();
-            LoadTiles ();
-        }
-    }
-
-    private void Initialise ()
-    {
-		if (useRandomSeed)
-		{
-			seed = (int) System.DateTime.Now.Ticks;
-		}
-
-		System.Random pseudoRandom = new System.Random (seed.GetHashCode ());
-
-        // Initialise heightMap
-        heightMap = new ImplicitFractal (
-            FractalType.MULTI,
-            BasisType.SIMPLEX,
-            InterpolationType.QUINTIC,
-            terrainOcatves,
-            terrainFrequency,
-            pseudoRandom.Next (0, int.MaxValue)
-        );
-
-        // Initialise heatMap
-        ImplicitGradient gradient  = new ImplicitGradient (1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1);
-        ImplicitFractal heatFractal = new ImplicitFractal (
-            FractalType.MULTI,
-            BasisType.SIMPLEX,
-            InterpolationType.QUINTIC,
-            heatOctaves,
-            heatFrequency,
-            pseudoRandom.Next (0, int.MaxValue)
-        );
-
-        heatMap = new ImplicitCombiner (CombinerType.MULTIPLY);
-        heatMap.AddSource (gradient);
-        heatMap.AddSource (heatFractal);
-
-        // Initialise moistureMap
-		moistureMap = new ImplicitFractal (
-            FractalType.MULTI, 
-		    BasisType.SIMPLEX,
-            InterpolationType.QUINTIC, 
-            moistureOctaves, 
-            moistureFrequency, 
-            pseudoRandom.Next (0, int.MaxValue)
-        );
-
-
-    }
-
-    // Get data from noise module
-    private void GetData ()
-    {
-        heightData = new MapData (width, height);
-        heatData = new MapData (width, height);
-        moistureData = new MapData (width, height);
-
-        // Get height data
-        for (int x = 0; x < width; x++)
-        {
-            for (int y = 0; y < height; y++)
-            {
-                // Noise range
-                float x1 = 0, x2 = 1;
-                float y1 = 0, y2 = 1;
-
-                float dx = x2 - x1;
-                float dy = y2 - y1;
-
-                // Get samples at smaller intervals
-                float s = x / (float) width;
-                float t = y / (float) height;
-
-                // Calculate 4D coords
-                float nx = x1 + Mathf.Cos (s * 2 * Mathf.PI) * dx / (2 * Mathf.PI);
-                float ny = y1 + Mathf.Cos (t * 2 * Mathf.PI) * dy / (2 * Mathf.PI);
-                float nz = x1 + Mathf.Sin (s * 2 * Mathf.PI) * dx / (2 * Mathf.PI);
-                float nw = y1 + Mathf.Sin (t * 2 * Mathf.PI) * dy / (2 * Mathf.PI);
-
-                float heightValue = (float) heightMap.Get (nx, ny, nz, nw);
-                float heatValue = (float) heatMap.Get (nx, ny, nz, nw);
-				float moistureValue = (float) moistureMap.Get (nx, ny, nz, nw);
-
-                // Keep track of the min/max values
-                heightData.max = (heightValue > heightData.max) ? heightValue : heightData.max;
-                heightData.min = (heightValue < heightData.min) ? heightValue : heightData.min;
-
-                heatData.max = (heatValue > heatData.max) ? heatValue : heatData.max;
-                heatData.min = (heatValue < heatData.min) ? heatValue : heatData.min;
-
-                moistureData.max = (moistureValue > moistureData.max) ? moistureValue : moistureData.max;
-                moistureData.min = (moistureValue < moistureData.min) ? moistureValue : moistureData.min;
-
-                heightData.data [x, y] = heightValue;
-                heatData.data [x, y] = heatValue;
-                moistureData.data [x, y] = moistureValue;
-            }
-        }
     }
 
     // Build Tile array based on data maps
@@ -1206,24 +1131,6 @@ public class Generator : MonoBehaviour {
         {
             stack.Push (t);
         }
-    }
-
-    // Get Tile neighbours
-    private Tile GetRight (Tile t)
-    {
-        return tiles [MathHelper.Mod (t.x + 1, width), t.y];
-    }
-    private Tile GetTop (Tile t)
-    {
-        return tiles [t.x, MathHelper.Mod (t.y - 1, height)];
-    }
-    private Tile GetLeft (Tile t)
-    {
-        return tiles [MathHelper.Mod (t.x - 1, width), t.y];
-    }
-    private Tile GetBottom (Tile t)
-    {
-        return tiles [t.x, MathHelper.Mod (t.y + 1, height)];
     }
 
     public BiomeType GetBiomeType (Tile tile)
